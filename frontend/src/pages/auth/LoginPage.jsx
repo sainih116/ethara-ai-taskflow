@@ -200,8 +200,7 @@ export default function LoginPage() {
           <div className="mt-6 p-4 rounded-lg bg-muted/60 border border-border text-xs">
             <p className="font-semibold text-foreground mb-2">Demo Credentials</p>
             <div className="space-y-1 text-muted-foreground">
-              <p>Admin — admin@ethara.ai / password123</p>
-              <p>Member — member@ethara.ai / password123</p>
+              <p>Admin — sainih116@gmail.com / Admin1234</p>
             </div>
           </div>
         </motion.div>
