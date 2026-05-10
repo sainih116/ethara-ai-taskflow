@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ── Light mode (enterprise clean) ──────────────────────────────────── */
+  :root {
+    --background:        220 20% 97%;
+    --foreground:        222 47% 11%;
+    --card:              0 0% 100%;
+    --card-foreground:   222 47% 11%;
+    --popover:           0 0% 100%;
+    --popover-foreground:222 47% 11%;
+    --primary:           239 84% 60%;
+    --primary-foreground:0 0% 100%;
+    --secondary:         220 14% 93%;
+    --secondary-foreground:222 47% 20%;
+    --muted:             220 14% 93%;
+    --muted-foreground:  215 16% 47%;
+    --accent:            220 14% 93%;
+    --accent-foreground: 222 47% 11%;
+    --destructive:       0 72% 51%;
+    --destructive-foreground:0 0% 100%;
+    --border:            220 13% 88%;
+    --input:             220 13% 88%;
+    --ring:              239 84% 60%;
+    --radius:            0.5rem;
+
+    /* enterprise sidebar */
+    --sidebar-bg:        222 47% 11%;
+    --sidebar-fg:        215 20% 65%;
+    --sidebar-active-bg: 239 84% 60%;
+    --sidebar-active-fg: 0 0% 100%;
+    --sidebar-hover-bg:  222 40% 16%;
+  }
+
+  /* ── Dark mode (enterprise dark) ────────────────────────────────────── */
+  .dark {
+    --background:        222 47% 7%;
+    --foreground:        210 40% 96%;
+    --card:              222 47% 10%;
+    --card-foreground:   210 40% 96%;
+    --popover:           222 47% 10%;
+    --popover-foreground:210 40% 96%;
+    --primary:           239 84% 63%;
+    --primary-foreground:0 0% 100%;
+    --secondary:         217 33% 17%;
+    --secondary-foreground:210 40% 96%;
+    --muted:             217 33% 17%;
+    --muted-foreground:  215 20% 55%;
+    --accent:            217 33% 17%;
+    --accent-foreground: 210 40% 96%;
+    --destructive:       0 63% 40%;
+    --destructive-foreground:210 40% 96%;
+    --border:            217 33% 17%;
+    --input:             217 33% 17%;
+    --ring:              239 84% 63%;
+
+    --sidebar-bg:        222 47% 7%;
+    --sidebar-fg:        215 20% 55%;
+    --sidebar-active-bg: 239 84% 60%;
+    --sidebar-active-fg: 0 0% 100%;
+    --sidebar-hover-bg:  222 40% 12%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  html { font-family: 'Inter', system-ui, sans-serif; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { @apply bg-border rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+
+/* ── Enterprise sidebar ───────────────────────────────────────────────── */
+.sidebar-enterprise {
+  background: hsl(var(--sidebar-bg));
+  color: hsl(var(--sidebar-fg));
+}
+
+/* ── Glassmorphism (subtle, enterprise-grade) ─────────────────────────── */
+.glass {
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(209, 213, 219, 0.4);
+}
+.dark .glass {
+  background-color: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* ── Gradient text (restrained, enterprise) ───────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Shimmer skeleton ─────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Priority badges ──────────────────────────────────────────────────── */
+.priority-urgent { @apply text-red-600    bg-red-50    border-red-200    dark:bg-red-950/30    dark:border-red-900/50; }
+.priority-high   { @apply text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-900/50; }
+.priority-medium { @apply text-amber-600  bg-amber-50  border-amber-200  dark:bg-amber-950/30  dark:border-amber-900/50; }
+.priority-low    { @apply text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50; }
+
+/* ── Status badges ────────────────────────────────────────────────────── */
+.status-todo        { @apply text-slate-600  bg-slate-100  dark:bg-slate-800/60; }
+.status-in-progress { @apply text-blue-600   bg-blue-50    dark:bg-blue-950/30; }
+.status-in-review   { @apply text-violet-600 bg-violet-50  dark:bg-violet-950/30; }
+.status-done        { @apply text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30; }
+
+/* ── Enterprise card hover ────────────────────────────────────────────── */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:border-primary/30;
+}
+
+/* ── Stat card accent bar ─────────────────────────────────────────────── */
+.stat-card-accent {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card-accent::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4f46e5, #2563eb);
+  border-radius: 3px 3px 0 0;
+}
