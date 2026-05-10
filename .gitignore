@@ -1,0 +1,32 @@
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Editor ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── Frontend ─────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env
+frontend/*.local
+
+# ─── Backend ──────────────────────────────────────────────────────────────────
+backend/.env
+backend/logs/
+backend/uploads/
+backend/*.exe
+backend/tmp/
+
+# ─── Misc ─────────────────────────────────────────────────────────────────────
+implementation_summary.txt
+package-lock.json
+*.log
