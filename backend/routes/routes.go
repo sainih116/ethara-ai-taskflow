@@ -62,6 +62,8 @@ func Setup(router *gin.Engine, hub *ws.Hub) {
 		auth.GET("/me", middleware.AuthMiddleware(), authCtrl.GetMe)
 		auth.PUT("/profile", middleware.AuthMiddleware(), authCtrl.UpdateProfile)
 		auth.PUT("/change-password", middleware.AuthMiddleware(), authCtrl.ChangePassword)
+		auth.POST("/forgot-password", authCtrl.ForgotPassword)
+		auth.POST("/reset-password", authCtrl.ResetPassword)
 	}
 
 	// Protected routes

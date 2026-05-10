@@ -16,16 +16,18 @@ const (
 
 // User represents a user in the system
 type User struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	Name      string             `bson:"name" json:"name"`
-	Email     string             `bson:"email" json:"email"`
-	Password  string             `bson:"password" json:"-"` // Never expose password in JSON
-	Role      UserRole           `bson:"role" json:"role"`
-	Avatar    string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	IsActive  bool               `bson:"isActive" json:"isActive"`
-	LastLogin *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
-	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID               primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
+	Name             string             `bson:"name" json:"name"`
+	Email            string             `bson:"email" json:"email"`
+	Password         string             `bson:"password" json:"-"` // Never expose password in JSON
+	Role             UserRole           `bson:"role" json:"role"`
+	Avatar           string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	IsActive         bool               `bson:"isActive" json:"isActive"`
+	LastLogin        *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
+	ResetToken       string             `bson:"resetToken,omitempty" json:"-"`
+	ResetTokenExpiry *time.Time         `bson:"resetTokenExpiry,omitempty" json:"-"`
+	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // UserResponse is the safe user object returned to clients
@@ -88,4 +90,15 @@ type CreateMemberRequest struct {
 type AuthResponse struct {
 	Token string       `json:"token"`
 	User  UserResponse `json:"user"`
+}
+
+// ForgotPasswordRequest payload
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordRequest payload
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=8"`
 }

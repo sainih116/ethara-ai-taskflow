@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/teamtaskmanager/backend/models"
@@ -26,7 +28,6 @@ func NewAuthService() *AuthService {
 
 // Register creates a new user account
 func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest) (*models.AuthResponse, error) {
-	// Check if email already exists
 	existing, err := s.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, errors.New("database error")
@@ -35,13 +36,11 @@ func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest)
 		return nil, errors.New("email already registered")
 	}
 
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.New("failed to process password")
 	}
 
-	// Determine role (first user becomes admin, rest are members)
 	role := models.RoleMember
 	if req.Role == "admin" {
 		role = models.RoleAdmin
@@ -59,13 +58,11 @@ func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest)
 		return nil, errors.New("failed to create user")
 	}
 
-	// Generate JWT token
 	token, err := utils.GenerateToken(user.ID, user.Email, string(user.Role))
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
 
-	// Log activity
 	s.activityRepo.Create(ctx, &models.ActivityLog{
 		UserID:     user.ID,
 		UserName:   user.Name,
@@ -77,10 +74,7 @@ func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest)
 		Details:    "New user registered",
 	})
 
-	return &models.AuthResponse{
-		Token: token,
-		User:  user.ToResponse(),
-	}, nil
+	return &models.AuthResponse{Token: token, User: user.ToResponse()}, nil
 }
 
 // Login authenticates a user and returns a JWT token
@@ -93,7 +87,6 @@ func (s *AuthService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 		return nil, errors.New("database error")
 	}
 
-	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid email or password")
 	}
@@ -102,24 +95,14 @@ func (s *AuthService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 		return nil, errors.New("account is deactivated")
 	}
 
-	// Generate JWT token
 	token, err := utils.GenerateToken(user.ID, user.Email, string(user.Role))
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
 
-	// Update last login
 	s.userRepo.UpdateLastLogin(ctx, user.ID)
 
-	return &models.AuthResponse{
-		Token: token,
-		User:  user.ToResponse(),
-	}, nil
-}
-
-// generateAvatar creates a default avatar URL using UI Avatars service
-func generateAvatar(name string) string {
-	return "https://ui-avatars.com/api/?name=" + name + "&background=6366f1&color=fff&size=128"
+	return &models.AuthResponse{Token: token, User: user.ToResponse()}, nil
 }
 
 // GetProfile returns the current user's profile
@@ -128,12 +111,10 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*models.Us
 	if err != nil {
 		return nil, errors.New("invalid user ID")
 	}
-
 	user, err := s.userRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
-
 	resp := user.ToResponse()
 	return &resp, nil
 }
@@ -152,7 +133,6 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID string, req *mod
 	if req.Avatar != "" {
 		update["avatar"] = req.Avatar
 	}
-
 	if len(update) == 0 {
 		return nil, errors.New("no fields to update")
 	}
@@ -165,12 +145,11 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID string, req *mod
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
-
 	resp := user.ToResponse()
 	return &resp, nil
 }
 
-// ChangePassword updates user password
+// ChangePassword updates user password (requires current password)
 func (s *AuthService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
 	id, err := parseObjectID(userID)
 	if err != nil {
@@ -195,4 +174,68 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID, currentPasswor
 		"password":  string(hashedPassword),
 		"updatedAt": time.Now(),
 	})
+}
+
+// ForgotPassword generates a reset token for the given email
+// Returns the token (in production this would be emailed; here we return it directly)
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) (string, error) {
+	user, err := s.userRepo.FindByEmail(ctx, email)
+	if err != nil {
+		// Don't reveal whether email exists — return empty token silently
+		return "", nil
+	}
+
+	token, err := generateResetToken()
+	if err != nil {
+		return "", errors.New("failed to generate reset token")
+	}
+
+	expiry := time.Now().Add(1 * time.Hour)
+	if err := s.userRepo.Update(ctx, user.ID, map[string]interface{}{
+		"resetToken":       token,
+		"resetTokenExpiry": expiry,
+		"updatedAt":        time.Now(),
+	}); err != nil {
+		return "", errors.New("failed to save reset token")
+	}
+
+	return token, nil
+}
+
+// ResetPassword validates the token and sets a new password
+func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	user, err := s.userRepo.FindByResetToken(ctx, token)
+	if err != nil {
+		return errors.New("invalid or expired reset token")
+	}
+
+	if user.ResetTokenExpiry == nil || time.Now().After(*user.ResetTokenExpiry) {
+		return errors.New("reset token has expired — please request a new one")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("failed to process password")
+	}
+
+	return s.userRepo.Update(ctx, user.ID, map[string]interface{}{
+		"password":         string(hashedPassword),
+		"resetToken":       "",
+		"resetTokenExpiry": nil,
+		"updatedAt":        time.Now(),
+	})
+}
+
+// generateAvatar creates a default avatar URL
+func generateAvatar(name string) string {
+	return "https://ui-avatars.com/api/?name=" + name + "&background=6366f1&color=fff&size=128"
+}
+
+// generateResetToken creates a cryptographically secure random hex token
+func generateResetToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", b), nil
 }

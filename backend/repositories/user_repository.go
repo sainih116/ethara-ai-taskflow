@@ -100,3 +100,16 @@ func (r *UserRepository) Delete(ctx context.Context, id primitive.ObjectID) erro
 	_, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	return err
 }
+
+// FindByResetToken finds a user by their password reset token
+func (r *UserRepository) FindByResetToken(ctx context.Context, token string) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{
+		"resetToken":       token,
+		"resetTokenExpiry": bson.M{"$gt": time.Now()},
+	}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

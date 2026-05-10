@@ -141,3 +141,40 @@ func (c *AuthController) ChangePassword(ctx *gin.Context) {
 
 	utils.Success(ctx, http.StatusOK, "Password changed successfully", nil)
 }
+
+// ForgotPassword generates a reset token for the given email
+func (c *AuthController) ForgotPassword(ctx *gin.Context) {
+	var req models.ForgotPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	token, err := c.authService.ForgotPassword(ctx.Request.Context(), req.Email)
+	if err != nil {
+		utils.InternalServerError(ctx, err.Error())
+		return
+	}
+
+	// In production: send token via email
+	// For this app: return token directly so frontend can use it
+	utils.Success(ctx, http.StatusOK, "If this email exists, a reset token has been generated", gin.H{
+		"resetToken": token,
+	})
+}
+
+// ResetPassword sets a new password using a valid reset token
+func (c *AuthController) ResetPassword(ctx *gin.Context) {
+	var req models.ResetPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	if err := c.authService.ResetPassword(ctx.Request.Context(), req.Token, req.NewPassword); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	utils.Success(ctx, http.StatusOK, "Password reset successfully. Please log in with your new password.", nil)
+}
